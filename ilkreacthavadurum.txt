@@ -1,0 +1,223 @@
+import React from 'react'
+import 'bootstrap/dist/css/bootstrap.min.css';
+import 'bootstrap/dist/js/bootstrap.bundle.min.js';
+import 'bootstrap/dist/css/bootstrap.min.css';
+import 'bootstrap/dist/css/bootstrap.min.css';
+import '../css/style.css';
+import Clear from "../icons/clear.svg";
+import Cloud from "../icons/cloud.svg";
+import Haze from "../icons/haze.svg";
+import Rain from "../icons/rain.svg";
+import Snow from "../icons/snow.svg";
+import Storm from "../icons/storm.svg";
+import { IoArrowBackCircle } from "react-icons/io5";
+import axios from 'axios';
+import { useState, useEffect } from "react";
+
+
+
+function Havadurum() {
+    // class değişkenleri
+    const pending = "pending";
+    const error = "error";
+    const active = "active";
+    const wrapper = "wrapper";
+    const info_txt = "info-txt"
+
+    const apikey = 'e015f644263d7dfc6fd26d20eb9d287c';
+    const [result, setResult] = useState("");
+    const [input, setInput] = useState("");
+    const [imageSrc, setImageSrc] = useState("");
+    const [temp, setTemp] = useState("");
+    const [numb, setNumb] = useState("");
+    const [weather, setWeather] = useState("");
+    const [location, setLocation] = useState("");
+    const [humiditySpan, setHumiditySpan] = useState("");
+    const [infoTxt, setinfoTxt] = useState("");
+    const [className, setClassName] = useState("");
+
+    const requestApi = async (city) => {
+        if (!city) {
+            console.log("Şehir adı boş. Lütfen geçerli bir şehir adı girin.");
+            return;
+        }
+
+        const req = `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${apikey}`;
+
+        try {
+            const response = await axios.get(req);
+            // console.log(response.data); 
+            setResult(response.data.name);
+        } catch (error) {
+            console.error("API hatası:", error.response ? error.response.data : error.message);
+        }
+    };
+
+    const handleKeyDown = (e) => {
+        if (e.key === 'Enter') {
+            requestApi(input);
+        }
+    };
+    const handleChange = (e) => {
+        setInput(e.target.value);
+    };
+
+    const changeImage = (info) => {
+        setImageSrc(info);
+    };
+
+    const tempChange = (info) => {
+        setTemp(info);
+    };
+    const numbChange = (info) => {
+        setNumb(info);
+    };
+    const weatherChange = (info) => {
+        setWeather(info);
+    }
+    const locationChange = (info) => {
+        setLocation(info);
+    }
+    const humidityspanChange = (info) => {
+        setHumiditySpan(info);
+    }
+    const infoTxtChange = (pending,error) => {
+        changeClassName(pending,error);
+    }
+    const changeWrapper = (newClassName) => {
+        changeClassName(setWrapper, newClassName);
+    }
+
+
+    const changeClassName = (setClassName, newClassName) => {
+        setClassName(newClassName);
+    };
+
+
+
+    const weatherDetails = (info) => {
+
+        if (typeof info === 'string') {
+
+            requestApi(info);
+            return;
+        }
+
+        if (info.cod == "404") {
+            infoTxtChange(infoTxt.classList.replace("pending", "error"));
+            infoTxtChange(`${input.value} şehri bulunamadı...`);
+
+        } else {
+
+            const city = info.name || "Bilinmiyor";
+            const country = (info.sys && info.sys.country) || "Bilinmiyor";
+            const weather = info.weather ? info.weather[0] : null;
+            const description = weather ? weather.description : "Tanımlanamayan hava durumu";
+            const id = weather ? weather.id : null;
+            const { feels_like, humidity, temp } = info.main || {};
+
+            // Hava durumu ikonlarını ayarlama
+            if (id === 800) {
+                changeImage(Clear);
+            } else if (id >= 200 && id <= 232) {
+                changeImage(Storm);
+            } else if (id >= 600 && id <= 622) {
+                changeImage(Snow);
+            } else if (id >= 701 && id <= 781) {
+                changeImage(Haze);
+            } else if (id >= 801 && id <= 804) {
+                changeImage(Cloud);
+            } else if ((id >= 300 && id <= 321) || (id >= 500 && id <= 531)) {
+                changeImage(Rain);
+            }
+
+            if (temp !== undefined && feels_like !== undefined) {
+                tempChange(Math.floor(temp - 273.15));
+                numbChange(Math.floor(feels_like - 273.15));
+            }
+
+            weatherChange(description);
+            locationChange(`${city}, ${country}`);
+            humidityspanChange(`${humidity}%`);
+
+
+            
+            infoTxtChange(pending,error);
+
+            changeWrapper(active);
+
+        }
+    }
+
+
+
+
+
+    return (
+        <div>
+            <div value={wrapper} onChange={changeWrapper} className={wrapper}>
+                <header>
+                    <IoArrowBackCircle style={{ margin: "5px", fontSize: "30px", cursor: "pointer" }} /> Hava Durumu
+                </header>
+
+                <section className="input-part">
+                    <p value={infoTxt} onChange={infoTxtChange} className={info_txt}></p>
+                    <input style={{ backgroundColor: "white", color: "black" }} type="text" placeholder="şehir" spellCheck="false" required value={input} onChange={handleChange} onKeyDown={handleKeyDown} />
+                    <div>
+                        <ul id="onerilensehirler"></ul>
+                    </div>
+                    <button id="favlist" className="fav btn btn-primary">
+                        Favorilediğin şehirleri görüntüle
+                    </button>
+                    <hr />
+                </section>
+
+                <section className="weather-part">
+                    <img src={imageSrc} onChange={changeImage} alt="Weather Icon" width="50" height="50" />
+                    <div value={temp} onChange={tempChange} className="temp">
+                        <span value={numb} onChange={numbChange} className="numb">_</span>
+                        <span className="deg">°</span>C
+                    </div>
+                    <div value={weather} onChange={weatherChange} className="weather">_ _</div>
+                    <div value={location} onChange={locationChange} className="location">
+                        <i className="bx bx-map"></i>
+                        <span>_, _</span>
+                    </div>
+                    <div className="bottom-details">
+                        <div className="column feels">
+                            <i className="bx bxs-thermometer"></i>
+                            <div className="details">
+                                <div className="temp">
+                                    <span className="numb-2">_</span>
+                                    <span className="deg">°</span>C
+                                </div>
+                                <p>Feels like</p>
+                            </div>
+                        </div>
+                        <div className="column humidity">
+                            <i className="bx bxs-droplet-half"></i>
+                            <div className="details">
+                                <span value={humiditySpan} onChange={humidityspanChange}>_</span>
+                                <p>Humidity</p>
+                            </div>
+                        </div>
+                    </div>
+                    <button className="btn btn-primary" id="favButton">
+                        Favorilere Ekle
+                    </button>
+                    <br />
+                    <button id="favlistiki" className="fav btn btn-primary">
+                        Favorilediğin şehirleri görüntüle
+                    </button>
+                </section>
+
+                <div id="fav-sehirler">
+                    <ul id="fav-sehirler-listesi"></ul>
+                </div>
+            </div>
+        </div>
+    );
+
+}
+
+export default Havadurum
